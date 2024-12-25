@@ -2,6 +2,10 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DealershipDotNetAPI.Domain.Entities
+
+/// Represents the Administrator entity in the system.
+/// This class is used to manage administrator-related data, including their email, password, and profile.
+/// When using Entity Framework Core (EF Core), this class will be mapped to a database table named "Administrators" by default.
 {
     public class Administrator
     {
