@@ -1,10 +1,13 @@
 using DealershipDotNetAPI.Domain.DTOs;
+using DealershipDotNetAPI.Domain.Interfaces;
+using DealershipDotNetAPI.Domain.Services;
 using DealershipDotNetAPI.Infrastructure.Db;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//builder.ServicesAddScoped
+builder.Services.AddScoped<IAdministratorService, AdministratorService>();
 
 // Add services to the container.
 // This adds controller support for handling HTTP requests and responses.
@@ -50,11 +53,11 @@ app.MapGet("/", () => "Hello Word!");
 
 // Define a POST endpoint for login functionality.
 // Accepts a LoginDTO object and verifies the email and password for authentication.
-app.MapPost("/login", (LoginDTO loginDTO) =>
+app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService administratorService) =>
 {
-    if (loginDTO.Email == "adm@test.com" && loginDTO.Password == "1234")
+    if (administratorService.Login(loginDTO) != null)
     {
-        return Results.Ok("Authorized login");
+        return Results.Ok("Authorized user");
 
     }
     else { return Results.Unauthorized(); }
