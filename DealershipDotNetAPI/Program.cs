@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//builder.ServicesAddScoped
+
 // Add services to the container.
 // This adds controller support for handling HTTP requests and responses.
 builder.Services.AddControllers();
