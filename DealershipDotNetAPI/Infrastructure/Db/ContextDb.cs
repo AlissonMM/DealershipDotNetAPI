@@ -14,6 +14,7 @@ namespace DealershipDotNetAPI.Infrastructure.Db
         /// Represents the "Administrators" table in the database.
         /// Maps the Administrator entity to this table.
         public DbSet<Administrator> Administrators { get; set; } = default!;
+        public DbSet<Vehicle> Vehicles { get; set; } = default!;
 
         /// Holds the application's configuration settings, specifically for accessing connection strings.
         public readonly IConfiguration _configurationAppSettings;

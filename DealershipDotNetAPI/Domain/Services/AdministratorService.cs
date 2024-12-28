@@ -27,9 +27,7 @@ namespace DealershipDotNetAPI.Domain.Services
         {
             var adm = _contextDb.Administrators.Where(a => a.Email == loginDTO.Email && a.Password == loginDTO.Password).FirstOrDefault();
             return adm;
-            
-                
-            
+           
         }
     }
 }
