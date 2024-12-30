@@ -1,13 +1,18 @@
 using DealershipDotNetAPI.Domain.DTOs;
+using DealershipDotNetAPI.Domain.Entities;
 using DealershipDotNetAPI.Domain.Interfaces;
+using DealershipDotNetAPI.Domain.ModelViews;
 using DealershipDotNetAPI.Domain.Services;
 using DealershipDotNetAPI.Infrastructure.Db;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+#region builder
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<IAdministratorService, AdministratorService>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 // Add services to the container.
 // This adds controller support for handling HTTP requests and responses.
@@ -26,7 +31,9 @@ builder.Services.AddDbContext<ContextDb>(options =>
             ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("mysql"))
             );
 });
+#endregion
 
+#region app
 var app = builder.Build();
 
 // Configure the HTTP request pipeline for development environment.
@@ -47,12 +54,18 @@ app.UseAuthorization();
 // Map controllers to handle requests based on routes defined in the controllers.
 app.MapControllers();
 
+#endregion
+
 // Define a simple GET endpoint at the root ('/').
 // Returns "Hello Word!" when accessed.
-app.MapGet("/", () => "Hello Word!");
+
+#region home
+app.MapGet("/", () => Results.Json(new Home()));
+#endregion
 
 // Define a POST endpoint for login functionality.
 // Accepts a LoginDTO object and verifies the email and password for authentication.
+#region administrator
 app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService administratorService) =>
 {
     if (administratorService.Login(loginDTO) != null)
@@ -62,6 +75,21 @@ app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService admin
     }
     else { return Results.Unauthorized(); }
 });
+#endregion
+
+#region vehicles
+app.MapPost("/vehicles", ([FromBody] VehicleDTO vehicleDTO, IVehicleService vehicleService) =>
+{
+    var vehicle = new Vehicle
+    {
+        Name = vehicleDTO.Name,
+        Brand = vehicleDTO.Brand,
+        Year = vehicleDTO.Year,
+    };
+    vehicleService.Save(vehicle);
+    return Results.Created($"/vehicle/{vehicle.Id}", vehicle);
+});
+#endregion
 
 
 // Start the application and listen for incoming requests.
