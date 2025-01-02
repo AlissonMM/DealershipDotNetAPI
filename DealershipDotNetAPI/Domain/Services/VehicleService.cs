@@ -2,6 +2,7 @@
 using DealershipDotNetAPI.Domain.Interfaces;
 using DealershipDotNetAPI.Infrastructure.Db;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace DealershipDotNetAPI.Domain.Services
 {
@@ -22,7 +23,7 @@ namespace DealershipDotNetAPI.Domain.Services
         /// <param name="name">Optional filter for vehicle name.</param>
         /// <param name="brand">Optional filter for vehicle brand.</param>
         /// <returns>A list of vehicles that match the specified criteria.</returns>
-        public List<Vehicle> AllVehicles(int page = 1, string? name = null, string? brand = null)
+        public List<Vehicle> AllVehicles(int? page = 1, string? name = null, string? brand = null)
         {
             var query = _contextDb.Vehicles.AsQueryable();
             if (!string.IsNullOrEmpty(name))
@@ -31,7 +32,11 @@ namespace DealershipDotNetAPI.Domain.Services
             }
             int itemsPerPage = 10;
 
-            query = query.Skip((page - 1) * itemsPerPage).Take(itemsPerPage);
+            if (page != null)
+            {
+                query = query.Skip(((int)page - 1) * itemsPerPage).Take(itemsPerPage);
+            }
+            
 
             return query.ToList();
         }
