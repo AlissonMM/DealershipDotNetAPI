@@ -60,7 +60,7 @@ app.MapControllers();
 // Returns "Hello Word!" when accessed.
 
 #region home
-app.MapGet("/", () => Results.Json(new Home()));
+app.MapGet("/", () => Results.Json(new Home())).WithTags("Home");
 #endregion
 
 // Define a POST endpoint for login functionality.
@@ -74,7 +74,7 @@ app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService admin
 
     }
     else { return Results.Unauthorized(); }
-});
+}).WithTags("Administrator");
 #endregion
 
 #region vehicles
@@ -88,7 +88,7 @@ app.MapPost("/vehicles", ([FromBody] VehicleDTO vehicleDTO, IVehicleService vehi
     };
     vehicleService.Save(vehicle);
     return Results.Created($"/vehicle/{vehicle.Id}", vehicle);
-});
+}).WithTags("Vehicle");
 
 app.MapGet("/vehicles", ( [FromQuery] int? page, IVehicleService vehicleService) =>
 {
@@ -96,7 +96,20 @@ app.MapGet("/vehicles", ( [FromQuery] int? page, IVehicleService vehicleService)
     
     
     return Results.Ok(vehicles);
-});
+}).WithTags("Vehicle");
+
+app.MapGet("/vehicles/{id}", ([FromRoute] int id, IVehicleService vehicleService) =>
+{
+    var vehicle = vehicleService.GetById(id);
+
+    if (vehicle == null)
+    {
+        return Results.NotFound();
+    }
+
+
+    return Results.Ok(vehicle);
+}).WithTags("Vehicle");
 #endregion
 
 
