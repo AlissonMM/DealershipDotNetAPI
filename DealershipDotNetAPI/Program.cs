@@ -6,6 +6,7 @@ using DealershipDotNetAPI.Domain.Services;
 using DealershipDotNetAPI.Infrastructure.Db;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 #region builder
 
@@ -65,9 +66,37 @@ app.MapGet("/", () => Results.Json(new Home())).WithTags("Home");
 
 // Define a POST endpoint for login functionality.
 // Accepts a LoginDTO object and verifies the email and password for authentication.
-#region administrator
+#region administrators
+ValidationErrors verifyAdministratorDTO(AdministratorDTO administratorDTO)
+{
+
+    var validation = new ValidationErrors
+    {
+        Messages = new List<string>()
+    };
+
+
+    if (string.IsNullOrEmpty(administratorDTO.Email))
+    {
+        validation.Messages.Add("The Email must not be empty!");
+    }
+
+    if (string.IsNullOrEmpty(administratorDTO.Password))
+    {
+        validation.Messages.Add("The Password must not be empty!");
+    }
+
+    if (string.IsNullOrEmpty(administratorDTO.Profile))
+    {
+        validation.Messages.Add("The Profile must not be empty!");
+    }
+
+    return validation;
+}
+
 app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService administratorService) =>
 {
+
     if (administratorService.Login(loginDTO) != null)
     {
         return Results.Ok("Authorized user");
@@ -75,11 +104,156 @@ app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService admin
     }
     else { return Results.Unauthorized(); }
 }).WithTags("Administrator");
+
+
+app.MapPost("/administrator", ([FromBody] AdministratorDTO administratorDTO, IAdministratorService administratorService) =>
+{
+    var validation = verifyAdministratorDTO(administratorDTO);
+
+    if (validation.Messages.Count > 0)
+    {
+        return Results.BadRequest(validation);
+    }
+
+    var administrator = new Administrator
+    {
+        Email = administratorDTO.Email,
+        Password = administratorDTO.Password,
+        Profile = administratorDTO.Profile,
+    };
+
+    Administrator administratorCreated = administratorService.AddAdministrator(administrator);
+
+    if (administratorCreated != null)
+    {
+        return Results.Created($"/administrator/{administrator.Id}", administrator);
+    }
+
+    else
+    {
+        return Results.BadRequest();
+    }
+     
+    
+   
+}).WithTags("Administrator");
+
+
+app.MapPut("/administrator/{id}", ([FromRoute] int id, AdministratorDTO administratorDTO, IAdministratorService administratorService) =>
+{
+
+    Administrator administratorFound = administratorService.GetAdministratorById(id);
+
+    if (administratorFound != null)
+    {
+        var validation = verifyAdministratorDTO(administratorDTO);
+
+        if (validation.Messages.Count > 0)
+        {
+            return Results.BadRequest(validation);
+        }
+
+
+        administratorFound.Email = administratorDTO.Email;
+        administratorFound.Password = administratorDTO.Password;
+        administratorFound.Profile = administratorDTO.Profile;
+
+
+        administratorService.UpdateAdministrator(administratorFound);
+        return Results.Created($"/administrator/{administratorFound.Id}", administratorFound);
+    }
+
+    else
+    {
+        return Results.BadRequest();
+    }
+
+
+
+}).WithTags("Administrator");
+
+
+app.MapGet("/administrator/{id}", ([FromQuery] int id, IAdministratorService administratorService) =>
+{
+    Administrator administrator = administratorService.GetAdministratorById(id);
+
+    if (administrator != null)
+    {
+        return Results.Ok(administrator);
+    }
+    else
+    {
+        return Results.NotFound();
+    }
+        
+    
+
+
+
+}).WithTags("Administrator");
+
+app.MapDelete("/administrator/{id}", ([FromQuery] int id, IAdministratorService administratorService) =>
+{
+    Administrator administrator = administratorService.GetAdministratorById(id);
+
+    if (administrator != null)
+    {
+        administratorService.DeleteAdministrator(administrator);
+        return Results.Ok("Administrator deleted");
+    }
+    else
+    {
+        return Results.NotFound();
+    }
+
+
+
+
+
+}).WithTags("Administrator");
+
+
 #endregion
 
 #region vehicles
+
+ValidationErrors verifyDTO(VehicleDTO vehicleDTO)
+{
+
+    var validation = new ValidationErrors
+    {
+        Messages = new List<string>()
+    };
+
+
+    if (string.IsNullOrEmpty(vehicleDTO.Name))
+    {
+        validation.Messages.Add("The name must not be empty!");
+    }
+
+    if (string.IsNullOrEmpty(vehicleDTO.Brand))
+    {
+        validation.Messages.Add("The brand must not be empty!");
+    }
+
+    if (vehicleDTO.Year < 1900)
+    {
+        validation.Messages.Add("Vehicle must not be older than the 1900s!");
+    }
+
+    return validation;
+}
+
 app.MapPost("/vehicles", ([FromBody] VehicleDTO vehicleDTO, IVehicleService vehicleService) =>
 {
+    var validation = verifyDTO(vehicleDTO);
+
+
+    if (validation.Messages.Count > 0)
+    {
+        return Results.BadRequest(validation);
+    }
+
     var vehicle = new Vehicle
     {
         Name = vehicleDTO.Name,
@@ -113,11 +287,21 @@ app.MapGet("/vehicles/{id}", ([FromRoute] int id, IVehicleService vehicleService
 
 app.MapPut("/vehicles/{id}", ([FromRoute] int id, VehicleDTO vehicleDTO, IVehicleService vehicleService) =>
 {
+
+
     var vehicle = vehicleService.GetById(id);
 
     if (vehicle == null)
     {
         return Results.NotFound();
+    }
+
+    var validation = verifyDTO(vehicleDTO);
+
+
+    if (validation.Messages.Count > 0)
+    {
+        return Results.BadRequest(validation);
     }
 
     vehicle.Name = vehicleDTO.Name;

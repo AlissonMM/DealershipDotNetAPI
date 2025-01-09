@@ -29,5 +29,38 @@ namespace DealershipDotNetAPI.Domain.Services
             return adm;
            
         }
+
+        public Administrator? AddAdministrator (Administrator administrator)
+        {
+
+            if (administrator != null)
+            {
+                _contextDb.Administrators.Add(administrator);
+                _contextDb.SaveChanges();
+            }
+            
+            return administrator;
+        }
+
+        public Administrator? GetAdministratorById(int id)
+        {
+            return _contextDb.Administrators.Where(v => v.Id == id).FirstOrDefault();
+        }
+
+
+        public Administrator? UpdateAdministrator(Administrator administrator)
+        {
+
+            _contextDb.Administrators.Update(administrator);
+            _contextDb.SaveChanges();
+
+            return administrator;
+        }
+
+        public void DeleteAdministrator(Administrator administrator)
+        {
+            _contextDb.Administrators.Remove(administrator);
+            _contextDb.SaveChanges();
+        }
     }
 }

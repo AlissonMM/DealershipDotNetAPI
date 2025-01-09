@@ -10,5 +10,12 @@ namespace DealershipDotNetAPI.Domain.Interfaces
     public interface IAdministratorService
     {
         Administrator? Login(LoginDTO loginDTO);
+        Administrator? AddAdministrator(Administrator administrator);
+
+        Administrator? GetAdministratorById(int id);
+
+        Administrator? UpdateAdministrator(Administrator administrator);
+
+        void DeleteAdministrator(Administrator administrator);
     }
 }
