@@ -17,5 +17,7 @@ namespace DealershipDotNetAPI.Domain.Interfaces
         Administrator? UpdateAdministrator(Administrator administrator);
 
         void DeleteAdministrator(Administrator administrator);
+
+        List<Administrator> GetAllAdministrators();
     }
 }

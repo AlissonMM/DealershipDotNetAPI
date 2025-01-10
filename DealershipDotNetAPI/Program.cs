@@ -192,6 +192,26 @@ app.MapGet("/administrator/{id}", ([FromQuery] int id, IAdministratorService adm
 
 }).WithTags("Administrator");
 
+
+app.MapGet("/administrator", (IAdministratorService administratorService) =>
+{
+    List<Administrator> administrators = administratorService.GetAllAdministrators();
+
+    if (administrators != null)
+    {
+        return Results.Ok(administrators);
+    }
+    else
+    {
+        return Results.NotFound();
+    }
+
+
+
+
+
+}).WithTags("Administrator");
+
 app.MapDelete("/administrator/{id}", ([FromQuery] int id, IAdministratorService administratorService) =>
 {
     Administrator administrator = administratorService.GetAdministratorById(id);

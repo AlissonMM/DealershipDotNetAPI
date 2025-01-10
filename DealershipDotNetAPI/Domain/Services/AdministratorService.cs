@@ -62,5 +62,10 @@ namespace DealershipDotNetAPI.Domain.Services
             _contextDb.Administrators.Remove(administrator);
             _contextDb.SaveChanges();
         }
+
+        public List<Administrator> GetAllAdministrators()
+        {
+            return _contextDb.Administrators.ToList();
+        }
     }
 }
