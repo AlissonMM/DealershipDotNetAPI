@@ -4,13 +4,39 @@ using DealershipDotNetAPI.Domain.Interfaces;
 using DealershipDotNetAPI.Domain.ModelViews;
 using DealershipDotNetAPI.Domain.Services;
 using DealershipDotNetAPI.Infrastructure.Db;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 #region builder
 
 var builder = WebApplication.CreateBuilder(args);
+
+var jwtKey = builder.Configuration.GetSection("Jwt")["Key"].ToString();
+
+if (string.IsNullOrEmpty(jwtKey))
+{
+    jwtKey = "123456";
+}
+
+//Adding Authentication by JWT
+builder.Services.AddAuthentication(option =>
+{
+    option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    option.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(option =>
+{
+    option.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateLifetime = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+    };
+});
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IAdministratorService, AdministratorService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
@@ -210,7 +236,7 @@ app.MapGet("/administrator", (IAdministratorService administratorService) =>
 
 
 
-}).WithTags("Administrator");
+}).RequireAuthorization().WithTags("Administrator");
 
 app.MapDelete("/administrator/{id}", ([FromQuery] int id, IAdministratorService administratorService) =>
 {
@@ -352,8 +378,12 @@ app.MapDelete("/vehicles/{id}", ([FromRoute] int id, IVehicleService vehicleServ
 #endregion
 
 
+#region app
 // Start the application and listen for incoming requests.
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.Run();
 
-
+#endregion
 
