@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
@@ -94,6 +97,31 @@ app.MapGet("/", () => Results.Json(new Home())).WithTags("Home");
 // Define a POST endpoint for login functionality.
 // Accepts a LoginDTO object and verifies the email and password for authentication.
 #region administrators
+string GenerateJwtToken(Administrator administrator)
+{
+    if (string.IsNullOrEmpty(jwtKey) || jwtKey.Length < 32)
+    {
+        throw new InvalidOperationException("JWT key must be at least 32 characters long.");
+    }
+
+    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+    var claims = new List<Claim>
+    {
+        new Claim("Email", administrator.Email),
+        new Claim("Profile", administrator.Profile)
+    };
+
+    var token = new JwtSecurityToken(
+        claims: claims,
+        expires: DateTime.UtcNow.AddDays(1),
+        signingCredentials: credentials
+    );
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+
 ValidationErrors verifyAdministratorDTO(AdministratorDTO administratorDTO)
 {
 
@@ -123,10 +151,18 @@ ValidationErrors verifyAdministratorDTO(AdministratorDTO administratorDTO)
 
 app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService administratorService) =>
 {
+    var admin = administratorService.Login(loginDTO);
 
-    if (administratorService.Login(loginDTO) != null)
+
+    if (admin!= null)
     {
-        return Results.Ok("Authorized user");
+        string jwtToken = GenerateJwtToken(admin);
+        return Results.Ok(new LoggedAdmin
+        {
+            Email = admin.Email,
+            Profile = admin.Profile,
+            JwtToken = jwtToken
+        });
 
     }
     else { return Results.Unauthorized(); }
