@@ -5,10 +5,14 @@ using DealershipDotNetAPI.Domain.ModelViews;
 using DealershipDotNetAPI.Domain.Services;
 using DealershipDotNetAPI.Infrastructure.Db;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -37,10 +41,41 @@ builder.Services.AddAuthentication(option =>
     {
         ValidateLifetime = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        ValidateIssuer = false,
+        ValidateAudience = false,
     };
+
+    option.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError($"Token failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            var email = context.Principal?.Claims.FirstOrDefault(c => c.Type == "Email")?.Value; // Alterar para usar a claim correta
+            logger.LogInformation($"Token valid for user: {email}");
+            var claims = string.Join(", ", context.Principal?.Claims.Select(c => $"{c.Type}: {c.Value}"));
+            logger.LogInformation($"Token claims: {claims}"); // Exibe as claims
+            return Task.CompletedTask;
+        }
+    };
+
 });
 
-builder.Services.AddAuthorization();
+
+builder.Services.AddAuthorization(options =>
+{
+    // Política que garante que a claim "Profile" exista
+    options.AddPolicy("ProfileRequired", policy =>
+    {
+        policy.RequireClaim("Profile");
+    });
+});
+
 
 builder.Services.AddScoped<IAdministratorService, AdministratorService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
@@ -51,7 +86,36 @@ builder.Services.AddControllers();
 
 // Add support for API documentation using Swagger/OpenAPI.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Insert JWT Token here: "
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[]{} // Replace with scopes if applicable
+        }
+    });
+});
 
 // Configure the database context with MySQL.
 // The connection string is retrieved from the application configuration.
@@ -91,7 +155,7 @@ app.MapControllers();
 // Returns "Hello Word!" when accessed.
 
 #region home
-app.MapGet("/", () => Results.Json(new Home())).WithTags("Home");
+app.MapGet("/", () => Results.Json(new Home())).AllowAnonymous().WithTags("Home");
 #endregion
 
 // Define a POST endpoint for login functionality.
@@ -166,7 +230,7 @@ app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService admin
 
     }
     else { return Results.Unauthorized(); }
-}).WithTags("Administrator");
+}).AllowAnonymous().WithTags("Administrator");
 
 
 app.MapPost("/administrator", ([FromBody] AdministratorDTO administratorDTO, IAdministratorService administratorService) =>
@@ -269,31 +333,7 @@ app.MapGet("/administrator", (IAdministratorService administratorService) =>
         return Results.NotFound();
     }
 
-
-
-
-
-}).RequireAuthorization().WithTags("Administrator");
-
-app.MapDelete("/administrator/{id}", ([FromQuery] int id, IAdministratorService administratorService) =>
-{
-    Administrator administrator = administratorService.GetAdministratorById(id);
-
-    if (administrator != null)
-    {
-        administratorService.DeleteAdministrator(administrator);
-        return Results.Ok("Administrator deleted");
-    }
-    else
-    {
-        return Results.NotFound();
-    }
-
-
-
-
-
-}).RequireAuthorization().WithTags("Administrator");
+}).RequireAuthorization("ProfileRequired").WithTags("Administrator");
 
 
 #endregion
@@ -422,6 +462,9 @@ app.UseSwaggerUI();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Iniciando aplicação...");
 
 app.Run();
 
