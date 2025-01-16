@@ -5,6 +5,7 @@ using DealershipDotNetAPI.Domain.ModelViews;
 using DealershipDotNetAPI.Domain.Services;
 using DealershipDotNetAPI.Infrastructure.Db;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,8 +27,11 @@ var jwtKey = builder.Configuration.GetSection("Jwt")["Key"].ToString();
 
 if (string.IsNullOrEmpty(jwtKey))
 {
-    jwtKey = "123456";
+    throw new Exception("JWT Key is missing in the configuration.");
 }
+
+var logger1 = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
+logger1.LogInformation($"JWT Key: {jwtKey}");
 
 //Adding Authentication by JWT
 builder.Services.AddAuthentication(option =>
@@ -40,9 +44,10 @@ builder.Services.AddAuthentication(option =>
     option.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateLifetime = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-        ValidateIssuer = false,
-        ValidateAudience = false,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)), // Certifique-se de que jwtKey está correto
+        ValidateIssuer = false, // Alterar para true se você quiser validar o emissor
+        ValidateAudience = false, // Alterar para true se você quiser validar o público
+        ValidateIssuerSigningKey = true, // Certifique-se de validar a assinatura
     };
 
     option.Events = new JwtBearerEvents
@@ -67,14 +72,6 @@ builder.Services.AddAuthentication(option =>
 });
 
 
-builder.Services.AddAuthorization(options =>
-{
-    // Política que garante que a claim "Profile" exista
-    options.AddPolicy("ProfileRequired", policy =>
-    {
-        policy.RequireClaim("Profile");
-    });
-});
 
 
 builder.Services.AddScoped<IAdministratorService, AdministratorService>();
@@ -131,23 +128,14 @@ builder.Services.AddDbContext<ContextDb>(options =>
 #region app
 var app = builder.Build();
 
-// Configure the HTTP request pipeline for development environment.
-if (app.Environment.IsDevelopment())
-{
-    // Enable Swagger UI for API testing and documentation in development.
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 
 // Redirect HTTP requests to HTTPS.
 app.UseHttpsRedirection();
 
 // Configure the app to use authorization middleware.
-app.UseAuthorization();
 
-// Map controllers to handle requests based on routes defined in the controllers.
-app.MapControllers();
+
 
 #endregion
 
@@ -174,7 +162,8 @@ string GenerateJwtToken(Administrator administrator)
     var claims = new List<Claim>
     {
         new Claim("Email", administrator.Email),
-        new Claim("Profile", administrator.Profile)
+        new Claim("Profile", administrator.Profile),
+        new Claim(ClaimTypes.Role, administrator.Profile),
     };
 
     var token = new JwtSecurityToken(
@@ -263,7 +252,9 @@ app.MapPost("/administrator", ([FromBody] AdministratorDTO administratorDTO, IAd
      
     
    
-}).RequireAuthorization().WithTags("Administrator");
+}).RequireAuthorization()
+.RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+.WithTags("Administrator");
 
 
 app.MapPut("/administrator/{id}", ([FromRoute] int id, AdministratorDTO administratorDTO, IAdministratorService administratorService) =>
@@ -297,7 +288,9 @@ app.MapPut("/administrator/{id}", ([FromRoute] int id, AdministratorDTO administ
 
 
 
-}).RequireAuthorization().WithTags("Administrator");
+}).RequireAuthorization()
+.RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+.WithTags("Administrator");
 
 
 app.MapGet("/administrator/{id}", ([FromQuery] int id, IAdministratorService administratorService) =>
@@ -317,7 +310,9 @@ app.MapGet("/administrator/{id}", ([FromQuery] int id, IAdministratorService adm
 
 
 
-}).RequireAuthorization().WithTags("Administrator");
+}).RequireAuthorization()
+.RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+.WithTags("Administrator");
 
 
 app.MapGet("/administrator", (IAdministratorService administratorService) =>
@@ -333,7 +328,9 @@ app.MapGet("/administrator", (IAdministratorService administratorService) =>
         return Results.NotFound();
     }
 
-}).RequireAuthorization("ProfileRequired").WithTags("Administrator");
+}).RequireAuthorization()
+.RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+.WithTags("Administrator");
 
 
 #endregion
@@ -385,7 +382,9 @@ app.MapPost("/vehicles", ([FromBody] VehicleDTO vehicleDTO, IVehicleService vehi
     };
     vehicleService.Save(vehicle);
     return Results.Created($"/vehicle/{vehicle.Id}", vehicle);
-}).RequireAuthorization().WithTags("Vehicle");
+}).RequireAuthorization()
+.RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
+.WithTags("Vehicles");
 
 app.MapGet("/vehicles", ( [FromQuery] int? page, IVehicleService vehicleService) =>
 {
@@ -393,7 +392,9 @@ app.MapGet("/vehicles", ( [FromQuery] int? page, IVehicleService vehicleService)
     
     
     return Results.Ok(vehicles);
-}).WithTags("Vehicle");
+}).RequireAuthorization()
+.RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
+.WithTags("Vehicles");
 
 app.MapGet("/vehicles/{id}", ([FromRoute] int id, IVehicleService vehicleService) =>
 {
@@ -435,7 +436,9 @@ app.MapPut("/vehicles/{id}", ([FromRoute] int id, VehicleDTO vehicleDTO, IVehicl
 
     return Results.Ok(vehicle);
 
-}).RequireAuthorization().WithTags("Vehicle");
+}).RequireAuthorization()
+.RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+.WithTags("Vehicles");
 
 
 app.MapDelete("/vehicles/{id}", ([FromRoute] int id, IVehicleService vehicleService) =>
@@ -443,7 +446,7 @@ app.MapDelete("/vehicles/{id}", ([FromRoute] int id, IVehicleService vehicleServ
     var vehicle = vehicleService.GetById(id);
 
     if (vehicle == null)
-    {
+    { 
         return Results.NotFound();
     }
 
@@ -451,20 +454,27 @@ app.MapDelete("/vehicles/{id}", ([FromRoute] int id, IVehicleService vehicleServ
 
     return Results.NoContent();
 
-}).RequireAuthorization().WithTags("Vehicle");
+}).RequireAuthorization()
+.RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+.WithTags("Vehicles");
 #endregion
 
 
 #region app
 // Start the application and listen for incoming requests
-app.UseSwagger();
-app.UseSwaggerUI();
+
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Map controllers to handle requests based on routes defined in the controllers.
+app.MapControllers();
+
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("Iniciando aplicação...");
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.Run();
 
