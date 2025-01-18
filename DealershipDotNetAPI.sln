@@ -1,25 +1,28 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.9.34622.214
+VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DealershipDotNetAPI", "DealershipDotNetAPI\DealershipDotNetAPI.csproj", "{281B75FE-CCFC-4E19-A054-D23C6F541718}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DealershipDotNetAPI", "API\DealershipDotNetAPI.csproj", "{C9EDCC0C-49F9-4229-A256-5FD2D50B4051}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{8E14DE3E-C959-4EE1-9F49-82DA9BF54227}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{281B75FE-CCFC-4E19-A054-D23C6F541718}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{281B75FE-CCFC-4E19-A054-D23C6F541718}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{281B75FE-CCFC-4E19-A054-D23C6F541718}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{281B75FE-CCFC-4E19-A054-D23C6F541718}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {B7F7A276-A340-437E-872B-A24DB4A5EBE5}
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C9EDCC0C-49F9-4229-A256-5FD2D50B4051}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9EDCC0C-49F9-4229-A256-5FD2D50B4051}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9EDCC0C-49F9-4229-A256-5FD2D50B4051}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9EDCC0C-49F9-4229-A256-5FD2D50B4051}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E14DE3E-C959-4EE1-9F49-82DA9BF54227}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E14DE3E-C959-4EE1-9F49-82DA9BF54227}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E14DE3E-C959-4EE1-9F49-82DA9BF54227}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E14DE3E-C959-4EE1-9F49-82DA9BF54227}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
