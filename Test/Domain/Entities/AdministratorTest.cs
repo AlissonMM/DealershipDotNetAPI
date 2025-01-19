@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Test.Domain.Entities
 {
     [TestClass]
-    internal class AdministratorTest
+    public class AdministratorTest
     {
         [TestMethod]
         public void TestGetSetProperties()
