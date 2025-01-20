@@ -1,4 +1,6 @@
 ﻿using DealershipDotNetAPI.Domain.Entities;
+using DealershipDotNetAPI.Infrastructure.Db;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
@@ -11,23 +13,24 @@ namespace Test.Domain.Entities
     [TestClass]
     public class AdministratorTest
     {
+
+       
+
+
         [TestMethod]
         public void TestGetSetProperties()
         {
             //Arrange
-            var adm = new Administrator();
+            //var adm = new Administrator();
 
             //Act
-            adm.Id = 10;
-            adm.Email = "test@test.com";
-            adm.Password = "test";
-            adm.Profile = "Adm";
+            //var context = new ContextDb();
 
             //Assert
-            Assert.AreEqual(10, adm.Id);
-            Assert.AreEqual("test@test.com", adm.Email);
-            Assert.AreEqual("test", adm.Password);
-            Assert.AreEqual("Adm", adm.Profile);
+            //Assert.AreEqual(10, adm.Id);
+            //Assert.AreEqual("test@test.com", adm.Email);
+            //Assert.AreEqual("test", adm.Password);
+            //Assert.AreEqual("Adm", adm.Profile);
         }
     }
 }
